@@ -22,4 +22,4 @@ the rendering/visualization part of the project TBD.
 
 ## Status: 
 ### early planning
-gathering resources to plan and design. searcing for simular project on Github/YouTube that will help me in the design.
+gathering resources to plan and design. searching for similar project on Github/YouTube that will help me in the design.
