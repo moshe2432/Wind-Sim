@@ -9,6 +9,8 @@ https://github.com/codecrafters-io/build-your-own-x#build-your-own-3d-renderer :
 - https://cg.informatik.uni-freiburg.de/intern/seminar/gridFluids_fluid-EulerParticle.pdf
 
 - https://ieeexplore.ieee.org/abstract/document/10885003
+- https://books.google.co.il/books?id=1-LqBgAAQBAJ&printsec=frontcover&redir_esc=y#v=onepage&q&f=false
+- https://graphics.cs.cmu.edu/nsp/course/15-464/Fall09/papers/StamFluidforGames.pdf
 
 ## Rendering / Visualization
 
