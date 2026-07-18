@@ -2,7 +2,6 @@
  
 Research and reference material used while designing and building Wind-Sim. Kept separate from the README so it can grow without cluttering the project overview.
  
-For each link, add a short note on what it's useful for — future you will thank present you.
  
 ## Fluid Physics / Simulation
  
