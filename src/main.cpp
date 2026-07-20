@@ -48,6 +48,16 @@ static void DrawGrid(int cellSize, int gridGapWidth, int gridGapHeight){
 }
 
 
+/*
+Add the source term to the grid.
+for example if you have a velocity field and you want to add an external force, you can use this function to add the force to the velocity field.
+*/
+static void add_source(Grid& x, Grid& s, float dt){
+    for (int i = 1; i <= N; i++)
+        for (int j = 1; j <= N; j++)    
+            x(i, j) += dt * s(i, j);
+}
+
 
 static void UpdatePhysics(float dt){
     // Placeholder for physics update logic
