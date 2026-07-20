@@ -21,6 +21,40 @@ static void DrawArrow(Vector2 start, Vector2 end, Color color){
     DrawLineEx(end, right, 2.0f, color);
 }
 
+
+/*
+Draw the grid lines and the arrows representing the velocity field (u, v) on the grid.
+*/
+static void DrawGrid(int cellSize, int gridGapWidth, int gridGapHeight){
+    for (int i = 0; i < N+3; i++)
+    {
+        DrawLine(i*cellSize + gridGapWidth, gridGapHeight, i*cellSize + gridGapWidth, gridGapHeight + cellSize * (N + 2), GRAY);
+        DrawLine(gridGapWidth, i*cellSize + gridGapHeight, gridGapWidth + cellSize * (N + 2), i*cellSize + gridGapHeight, GRAY);
+    }
+
+
+            for (int i = 1; i <= N; i++)
+            {
+                for (int j = 1; j <= N; j++)
+                {
+                    float u_val = u(i, j);
+                    float v_val = v(i, j);
+                    Vector2 start = { gridGapWidth + j * cellSize + cellSize / 2.0f, gridGapHeight + i * cellSize + cellSize / 2.0f };
+                    Vector2 end = { start.x + u_val * 10.0f, start.y + v_val * 10.0f };
+                    DrawArrow(start, end, RED);
+                }
+            }
+            
+}
+
+
+
+static void UpdatePhysics(float dt){
+    // Placeholder for physics update logic
+    // This function should update the velocity fields (u, v) and density fields (dens) based on the simulation rules.
+    // For now, we will just add some random perturbations to the velocity fields to visualize movement.
+}
+
 int main(){
     const int screenWidth = 1280;
     const int screenHeight = 720;
@@ -51,24 +85,8 @@ int main(){
         // Draw the simulation here
             ClearBackground(BLACK);
             DrawText("Wind-Sim", 10, 10, 20, RAYWHITE);
-            for (int i = 0; i < N+3; i++)
-            {
-                DrawLine(i*cellSize + gridGapWidth, gridGapHeight, i*cellSize + gridGapWidth, gridGapHeight + gridPixelSize, GRAY);
-                DrawLine(gridGapWidth, i*cellSize + gridGapHeight, gridGapWidth + gridPixelSize, i*cellSize + gridGapHeight, GRAY);
-            }
+            DrawGrid(cellSize, gridGapWidth, gridGapHeight);
 
-            for (int i = 1; i <= N; i++)
-            {
-                for (int j = 1; j <= N; j++)
-                {
-                    float u_val = u(i, j);
-                    float v_val = v(i, j);
-                    Vector2 start = { gridGapWidth + j * cellSize + cellSize / 2.0f, gridGapHeight + i * cellSize + cellSize / 2.0f };
-                    Vector2 end = { start.x + u_val * 10.0f, start.y + v_val * 10.0f };
-                    DrawArrow(start, end, RED);
-                }
-            }
-            
         EndDrawing();
     }
 
