@@ -8,15 +8,20 @@
 #define SCREEN_HEIGHT 720
 #define GRID_GAP_WIDTH 320
 #define GRID_GAP_HEIGHT 40
-#define MOUSE_RADIUS 80
-#define MOUSE_FORCE 5.0f
+#define MOUSE_RADIUS 30
+#define MOUSE_FORCE 1.0f
 #define VISC 0.0001f
 #define DIFF 0.0001f
+#define DENSITY_SCALE 5.0f
+#define DENSITY_INJECTION_RATE 100.0f
 
 static Grid u(N), v(N), u_prev(N), v_prev(N), dens(N),dens_prev(N);
 
 static void DrawArrow(Vector2 start, Vector2 end, Color color);
 static void DrawGrid(int cellSize, int gridGapWidth, int gridGapHeight);
+static void DrawVelocityArrows(int cellSize, int gridGapWidth, int gridGapHeight);
+static void DrawDensity(int cellSize, int gridGapWidth, int gridGapHeight);
+static Color DensityToColor(int i, int j);
 static void set_bnd(int b, Grid& x);
 static void add_source(Grid& x, Grid& s, float dt);
 static void diffusion(int b, Grid& x, Grid& x0, float diff, float dt);
@@ -50,21 +55,40 @@ static void DrawGrid(int cellSize, int gridGapWidth, int gridGapHeight){
     {
         DrawLine(i*cellSize + gridGapWidth, gridGapHeight, i*cellSize + gridGapWidth, gridGapHeight + cellSize * (N + 2), GRAY);
         DrawLine(gridGapWidth, i*cellSize + gridGapHeight, gridGapWidth + cellSize * (N + 2), i*cellSize + gridGapHeight, GRAY);
+    }      
+}
+
+static void DrawVelocityArrows(int cellSize, int gridGapWidth, int gridGapHeight){
+    for (int i = 1; i <= N; i++)
+    {
+        for (int j = 1; j <= N; j++)
+        {
+            float u_val = u(i, j);
+            float v_val = v(i, j);
+            Vector2 start = { gridGapWidth + j * cellSize + cellSize / 2.0f, gridGapHeight + i * cellSize + cellSize / 2.0f };
+            Vector2 end = { start.x + u_val * 10.0f, start.y + v_val * 10.0f };
+            DrawArrow(start, end, RED);
+        }
     }
+}
 
+static void DrawDensity(int cellSize, int gridGapWidth, int gridGapHeight){
+    for (int i = 1; i <= N; i++)
+    {
+        for (int j = 1; j <= N; j++)
+        {
+            int x = gridGapWidth + j * cellSize;
+            int y = gridGapHeight + i * cellSize;
+            DrawRectangle(x, y, cellSize, cellSize, DensityToColor(i, j));
+        }
+    }
+}
 
-            for (int i = 1; i <= N; i++)
-            {
-                for (int j = 1; j <= N; j++)
-                {
-                    float u_val = u(i, j);
-                    float v_val = v(i, j);
-                    Vector2 start = { gridGapWidth + j * cellSize + cellSize / 2.0f, gridGapHeight + i * cellSize + cellSize / 2.0f };
-                    Vector2 end = { start.x + u_val * 10.0f, start.y + v_val * 10.0f };
-                    DrawArrow(start, end, RED);
-                }
-            }
-            
+static Color DensityToColor(int i, int j){
+    // Map density value to a color (e.g., from blue to red)
+    float d = Clamp(dens(i, j) / DENSITY_SCALE, 0.0f, 1.0f);
+    Color c = Fade(WHITE, d);   // WHITE with alpha scaled by density
+    return c;
 }
 
 
@@ -271,9 +295,9 @@ static void get_input(Grid& u_prev, Grid& v_prev, Grid& dens_prev, float dt){
                 // Calculate the position of the cell center in the grid
                 Vector2 cellPos = { i * cellSize + (cellSize/2), j * cellSize + (cellSize/2) };
                 if (Vector2Distance(mouseGridPos, cellPos) < MOUSE_RADIUS) {// If the mouse is close to the cell center, add density to that cell
-                    dens_prev(i+1, j+1) += 100.0f; // Add density to the cell
-                    u_prev(i+1, j+1) += MOUSE_FORCE * mouseDelta.x/dt; // Add horizontal velocity to the cell
-                    v_prev(i+1, j+1) += MOUSE_FORCE * mouseDelta.y/dt; // Add vertical velocity to the cell
+                    dens_prev(i+1, j+1) += DENSITY_INJECTION_RATE; // Add density to the cell
+                    u_prev(i+1, j+1) += MOUSE_FORCE * mouseDelta.x / (cellSize * N * dt); // Add horizontal velocity to the cell
+                    v_prev(i+1, j+1) += MOUSE_FORCE * mouseDelta.y / (cellSize * N * dt); // Add vertical velocity to the cell
                 }
             }
         }
@@ -291,6 +315,7 @@ int main(){
     const int cellSize = (screenHeight - 2 * gridGapHeight) / (N + 2);
     const int gridPixelSize = cellSize * (N + 2);
 
+    bool showDensity = true;
 
     InitWindow(screenWidth, screenHeight, "Wind-Sim");
     SetTargetFPS(60);
@@ -301,6 +326,10 @@ int main(){
         
         // Get user input and update the simulation state
         get_input(u_prev, v_prev, dens_prev, GetFrameTime());
+
+        if (IsKeyPressed(KEY_SPACE)) {
+            showDensity = !showDensity;
+        }
         
         // Update the Physics simulation here
         UpdatePhysics(GetFrameTime());
@@ -311,6 +340,11 @@ int main(){
             ClearBackground(BLACK);
             DrawText("Wind-Sim", 10, 10, 20, RAYWHITE);
             DrawGrid(cellSize, gridGapWidth, gridGapHeight);
+            if (showDensity) {
+                DrawDensity(cellSize, gridGapWidth, gridGapHeight);
+            }else {
+                DrawVelocityArrows(cellSize, gridGapWidth, gridGapHeight);
+            }
 
         EndDrawing();
     }
