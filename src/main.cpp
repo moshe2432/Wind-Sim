@@ -1,8 +1,15 @@
 #include "raylib.h"
+#include "raymath.h"
 #include <cmath>
 #include "Grid.h"
 
-#define N 16
+#define N 64
+#define SCREEN_WIDTH 1280
+#define SCREEN_HEIGHT 720
+#define GRID_GAP_WIDTH 320
+#define GRID_GAP_HEIGHT 40
+#define MOUSE_RADIUS 80
+#define MOUSE_FORCE 5.0f
 #define VISC 0.0001f
 #define DIFF 0.0001f
 
@@ -20,7 +27,7 @@ static void project(Grid& u, Grid& v, Grid& p, Grid& div);
 static void UpdatePhysics(float dt);
 
 
-
+/***************************Drawing Functions**********************************/
 static void DrawArrow(Vector2 start, Vector2 end, Color color){
     DrawLineEx(start, end, 2.0f, color);
 
@@ -60,6 +67,8 @@ static void DrawGrid(int cellSize, int gridGapWidth, int gridGapHeight){
             
 }
 
+
+/********************************Physics Functions********************************/
 static void set_bnd(int b, Grid& x){
     // This function should implement the boundary conditions for the simulation.
     for (int i = 1; i <= N; i++) {
@@ -225,11 +234,60 @@ static void UpdatePhysics(float dt){
 
 }
 
+
+/******************************Input Functions**********************************/
+static void get_input(Grid& u_prev, Grid& v_prev, Grid& dens_prev, float dt){
+    // This function should handle user input to modify the velocity and density fields.
+    // For example, you can use mouse input to add forces or density to the simulation.
+    float x,y;
+    float cellSize = (SCREEN_HEIGHT - 2 * GRID_GAP_HEIGHT) / (N + 2);
+    
+    // Reset the previous velocity and density fields to zero
+    for (int i = 1; i <= N; i++)
+    {
+        for (int j = 1; j <= N; j++)
+        {
+            u_prev(i, j) = 0.0f;
+            v_prev(i, j) = 0.0f;
+            dens_prev(i, j) = 0.0f;
+        }
+    }
+    
+    
+    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+        // Convert mouse position in the window to its position in the grid
+        Vector2 mousePos = GetMousePosition();
+        Vector2 mouseDelta = GetMouseDelta();
+        x = (mousePos.y - GRID_GAP_HEIGHT);
+        y = (mousePos.x - GRID_GAP_WIDTH);
+        Vector2 mouseGridPos = {x,y};
+        
+        
+        //add density to all the grid cells that are close to the mouse position
+        for (int i = 0; i < N; i++)
+        {
+            for (int j = 0; j < N; j++)
+            {   
+                // Calculate the position of the cell center in the grid
+                Vector2 cellPos = { i * cellSize + (cellSize/2), j * cellSize + (cellSize/2) };
+                if (Vector2Distance(mouseGridPos, cellPos) < MOUSE_RADIUS) {// If the mouse is close to the cell center, add density to that cell
+                    dens_prev(i+1, j+1) += 100.0f; // Add density to the cell
+                    u_prev(i+1, j+1) += MOUSE_FORCE * mouseDelta.x/dt; // Add horizontal velocity to the cell
+                    v_prev(i+1, j+1) += MOUSE_FORCE * mouseDelta.y/dt; // Add vertical velocity to the cell
+                }
+            }
+        }
+        
+    }
+}
+
+
+
 int main(){
-    const int screenWidth = 1280;
-    const int screenHeight = 720;
-    const int gridGapWidth = 320;
-    const int gridGapHeight = 40;
+    const int screenWidth = SCREEN_WIDTH;
+    const int screenHeight = SCREEN_HEIGHT;
+    const int gridGapWidth = GRID_GAP_WIDTH;
+    const int gridGapHeight = GRID_GAP_HEIGHT;
     const int cellSize = (screenHeight - 2 * gridGapHeight) / (N + 2);
     const int gridPixelSize = cellSize * (N + 2);
 
@@ -240,8 +298,14 @@ int main(){
     
 
     while (!WindowShouldClose()) {
+        
+        // Get user input and update the simulation state
+        get_input(u_prev, v_prev, dens_prev, GetFrameTime());
+        
         // Update the Physics simulation here
         UpdatePhysics(GetFrameTime());
+        
+        
         BeginDrawing();
         // Draw the simulation here
             ClearBackground(BLACK);
