@@ -5,11 +5,14 @@
 
 class Grid{
     private:
-        int N;
+        int n;
         std::vector<float> grid;
     public:
-        Grid(int n): N(n), grid((n+2)*(n+2), 0.0f) {}
+        Grid(int n): n(n), grid((n+2)*(n+2), 0.0f) {}
         float& operator()(int i, int j){
-            return grid[i*(N+2) + j];
+            return grid[i*(n+2) + j];
+        }
+        void swap(Grid& other){
+            grid.swap(other.grid);
         }
 };
