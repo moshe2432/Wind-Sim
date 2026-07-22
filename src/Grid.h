@@ -15,4 +15,9 @@ class Grid{
         void swap(Grid& other){
             grid.swap(other.grid);
         }
+        void reset(){
+            for (int i = 0; i < (n+2)*(n+2); i++){
+                grid[i] = 0.0f;
+            }
+        }
 };

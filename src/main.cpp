@@ -2,18 +2,19 @@
 #include "raymath.h"
 #include <cmath>
 #include "Grid.h"
+#include "input/input.h"
 
-#define N 64
+#define N 256
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
 #define GRID_GAP_WIDTH 320
 #define GRID_GAP_HEIGHT 40
-#define MOUSE_RADIUS 30
+#define MOUSE_RADIUS 15
 #define MOUSE_FORCE 1.0f
 #define VISC 0.0001f
 #define DIFF 0.0001f
-#define DENSITY_SCALE 5.0f
-#define DENSITY_INJECTION_RATE 100.0f
+#define DENSITY_SCALE 3.0f
+#define DENSITY_INJECTION_RATE 25.0f
 
 static Grid u(N), v(N), u_prev(N), v_prev(N), dens(N),dens_prev(N);
 
@@ -121,7 +122,7 @@ static void diffusion(int b, Grid& x, Grid& x0, float diff, float dt){
     // This function should implement the diffusion step of the simulation.
     int i,j,k;
     float a = dt * diff * N * N;
-    for (k = 0; k < 20; k++) {
+    for (k = 0; k < 10; k++) {
         for (i = 1; i <= N; i++) {
             for (j = 1; j <= N; j++) {
                 // in this step we are solving the linear system of equations using the Gauss-Seidel method.
@@ -183,7 +184,6 @@ static void dens_step(Grid& x, Grid& x0, Grid& u, Grid& v, float diff, float dt)
     diffusion(0, x, x0, diff, dt);
     x.swap(x0);
     advect(0, x, x0, u, v, dt);
-    set_bnd(0, x);
 }
 
 static void vel_step(Grid& u, Grid& v, Grid& u0, Grid& v0, float visc, float dt){
@@ -230,7 +230,7 @@ static void project(Grid& u, Grid& v, Grid& p, Grid& div){
     }
     set_bnd(0, div);set_bnd(0, p);
     //solve for the pressure field using the Gauss-Seidel method
-    for (k = 0; k < 20; k++) {
+    for (k = 0; k < 10; k++) {
         for (i = 1; i <= N; i++) {
             for (j = 1; j <= N; j++) {
                 p(i, j) = (div(i, j) + p(i-1, j) + p(i+1, j) + p(i, j-1) + p(i, j+1)) / 4;
@@ -267,37 +267,32 @@ static void get_input(Grid& u_prev, Grid& v_prev, Grid& dens_prev, float dt){
     float cellSize = (SCREEN_HEIGHT - 2 * GRID_GAP_HEIGHT) / (N + 2);
     
     // Reset the previous velocity and density fields to zero
-    for (int i = 1; i <= N; i++)
-    {
-        for (int j = 1; j <= N; j++)
-        {
-            u_prev(i, j) = 0.0f;
-            v_prev(i, j) = 0.0f;
-            dens_prev(i, j) = 0.0f;
-        }
-    }
+    u_prev.reset();
+    v_prev.reset();
+    dens_prev.reset();
     
     
     if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
         // Convert mouse position in the window to its position in the grid
         Vector2 mousePos = GetMousePosition();
+        map_window_pos_to_grid_pos(&mousePos);
         Vector2 mouseDelta = GetMouseDelta();
-        x = (mousePos.y - GRID_GAP_HEIGHT);
-        y = (mousePos.x - GRID_GAP_WIDTH);
-        Vector2 mouseGridPos = {x,y};
+        Vector2 cellPos = {0,0};
         
         
         //add density to all the grid cells that are close to the mouse position
-        for (int i = 0; i < N; i++)
+        for (int i = 1; i <= N; i++)
         {
-            for (int j = 0; j < N; j++)
+            for (int j = 1; j <= N; j++)
             {   
                 // Calculate the position of the cell center in the grid
-                Vector2 cellPos = { i * cellSize + (cellSize/2), j * cellSize + (cellSize/2) };
-                if (Vector2Distance(mouseGridPos, cellPos) < MOUSE_RADIUS) {// If the mouse is close to the cell center, add density to that cell
-                    dens_prev(i+1, j+1) += DENSITY_INJECTION_RATE; // Add density to the cell
-                    u_prev(i+1, j+1) += MOUSE_FORCE * mouseDelta.x / (cellSize * N * dt); // Add horizontal velocity to the cell
-                    v_prev(i+1, j+1) += MOUSE_FORCE * mouseDelta.y / (cellSize * N * dt); // Add vertical velocity to the cell
+                //map_cell_cords_to_grid_pos(j, i, &cellPos);
+                cellPos = { j * cellSize + (cellSize / 2), i * cellSize + (cellSize / 2) };
+                
+                if (Vector2Distance(mousePos, cellPos) < MOUSE_RADIUS) {// If the mouse is close to the cell center, add density to that cell
+                    dens_prev(i, j) += DENSITY_INJECTION_RATE; // Add density to the cell
+                    u_prev(i, j) += MOUSE_FORCE * mouseDelta.x / (cellSize * N * dt); // Add horizontal velocity to the cell
+                    v_prev(i, j) += MOUSE_FORCE * mouseDelta.y / (cellSize * N * dt); // Add vertical velocity to the cell
                 }
             }
         }
@@ -339,10 +334,14 @@ int main(){
         // Draw the simulation here
             ClearBackground(BLACK);
             DrawText("Wind-Sim", 10, 10, 20, RAYWHITE);
-            DrawGrid(cellSize, gridGapWidth, gridGapHeight);
+
+            //draw the current fps in the top right corner of the window
+            DrawText(TextFormat("FPS: %d", GetFPS()), screenWidth - 100, 10, 20, RAYWHITE);
+            
             if (showDensity) {
                 DrawDensity(cellSize, gridGapWidth, gridGapHeight);
             }else {
+                DrawGrid(cellSize, gridGapWidth, gridGapHeight);
                 DrawVelocityArrows(cellSize, gridGapWidth, gridGapHeight);
             }
 
