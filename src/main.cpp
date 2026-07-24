@@ -3,6 +3,7 @@
 #include <cmath>
 #include "Grid.h"
 #include "input/input.h"
+#include "rendering/rendering.h"
 #include "config.h"
 
 
@@ -12,11 +13,6 @@
 
 static Grid u(N), v(N), u_prev(N), v_prev(N), dens(N),dens_prev(N);
 
-static void DrawArrow(Vector2 start, Vector2 end, Color color);
-static void DrawGrid(int cellSize, int gridGapWidth, int gridGapHeight);
-static void DrawVelocityArrows(int cellSize, int gridGapWidth, int gridGapHeight);
-static void DrawDensity(int cellSize, int gridGapWidth, int gridGapHeight);
-static Color DensityToColor(int i, int j);
 static void set_bnd(int b, Grid& x);
 static void add_source(Grid& x, Grid& s, float dt);
 static void diffusion(int b, Grid& x, Grid& x0, float diff, float dt);
@@ -27,64 +23,6 @@ static void project(Grid& u, Grid& v, Grid& p, Grid& div);
 static void UpdatePhysics(float dt);
 
 
-/***************************Drawing Functions**********************************/
-static void DrawArrow(Vector2 start, Vector2 end, Color color){
-    DrawLineEx(start, end, 2.0f, color);
-
-    float angle = atan2f(end.y - start.y, end.x - start.x);
-    float headLen = 6.0f;
-    float headAngle = 25.0f * DEG2RAD;
-
-    Vector2 left  = { end.x - headLen * cosf(angle - headAngle), end.y - headLen * sinf(angle - headAngle) };
-    Vector2 right = { end.x - headLen * cosf(angle + headAngle), end.y - headLen * sinf(angle + headAngle) };
-
-    DrawLineEx(end, left, 2.0f, color);
-    DrawLineEx(end, right, 2.0f, color);
-}
-
-/*
-Draw the grid lines and the arrows representing the velocity field (u, v) on the grid.
-*/
-static void DrawGrid(int cellSize, int gridGapWidth, int gridGapHeight){
-    for (int i = 0; i < N+3; i++)
-    {
-        DrawLine(i*cellSize + gridGapWidth, gridGapHeight, i*cellSize + gridGapWidth, gridGapHeight + cellSize * (N + 2), GRAY);
-        DrawLine(gridGapWidth, i*cellSize + gridGapHeight, gridGapWidth + cellSize * (N + 2), i*cellSize + gridGapHeight, GRAY);
-    }      
-}
-
-static void DrawVelocityArrows(int cellSize, int gridGapWidth, int gridGapHeight){
-    for (int i = 1; i <= N; i++)
-    {
-        for (int j = 1; j <= N; j++)
-        {
-            float u_val = u(i, j);
-            float v_val = v(i, j);
-            Vector2 start = { gridGapWidth + j * cellSize + cellSize / 2.0f, gridGapHeight + i * cellSize + cellSize / 2.0f };
-            Vector2 end = { start.x + u_val * 10.0f, start.y + v_val * 10.0f };
-            DrawArrow(start, end, RED);
-        }
-    }
-}
-
-static void DrawDensity(int cellSize, int gridGapWidth, int gridGapHeight){
-    for (int i = 1; i <= N; i++)
-    {
-        for (int j = 1; j <= N; j++)
-        {
-            int x = gridGapWidth + j * cellSize;
-            int y = gridGapHeight + i * cellSize;
-            DrawRectangle(x, y, cellSize, cellSize, DensityToColor(i, j));
-        }
-    }
-}
-
-static Color DensityToColor(int i, int j){
-    // Map density value to a color (e.g., from blue to red)
-    float d = Clamp(dens(i, j) / DENSITY_SCALE, 0.0f, 1.0f);
-    Color c = Fade(WHITE, d);   // WHITE with alpha scaled by density
-    return c;
-}
 
 
 /********************************Physics Functions********************************/
@@ -253,49 +191,6 @@ static void UpdatePhysics(float dt){
 }
 
 
-/******************************Input Functions**********************************
-static void get_input(Grid& u_prev, Grid& v_prev, Grid& dens_prev, float dt){
-    // This function should handle user input to modify the velocity and density fields.
-    // For example, you can use mouse input to add forces or density to the simulation.
-    float x,y;
-    float cellSize = (SCREEN_HEIGHT - 2 * GRID_GAP_HEIGHT) / (N + 2);
-    
-    // Reset the previous velocity and density fields to zero
-    u_prev.reset();
-    v_prev.reset();
-    dens_prev.reset();
-    
-    
-    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-        // Convert mouse position in the window to its position in the grid
-        Vector2 mousePos = GetMousePosition();
-        map_window_pos_to_grid_pos(&mousePos);
-        Vector2 mouseDelta = GetMouseDelta();
-        Vector2 cellPos = {0,0};
-        
-        
-        //add density to all the grid cells that are close to the mouse position
-        for (int i = 1; i <= N; i++)
-        {
-            for (int j = 1; j <= N; j++)
-            {   
-                // Calculate the position of the cell center in the grid
-                //map_cell_cords_to_grid_pos(j, i, &cellPos);
-                cellPos = { j * cellSize + (cellSize / 2), i * cellSize + (cellSize / 2) };
-                
-                if (Vector2Distance(mousePos, cellPos) < MOUSE_RADIUS) {// If the mouse is close to the cell center, add density to that cell
-                    dens_prev(i, j) += DENSITY_INJECTION_RATE; // Add density to the cell
-                    u_prev(i, j) += MOUSE_FORCE * mouseDelta.x / (cellSize * N * dt); // Add horizontal velocity to the cell
-                    v_prev(i, j) += MOUSE_FORCE * mouseDelta.y / (cellSize * N * dt); // Add vertical velocity to the cell
-                }
-            }
-        }
-        
-    }
-                
-}*/
-
-
 
 int main(){
     const int screenWidth = SCREEN_WIDTH;
@@ -334,10 +229,10 @@ int main(){
             DrawText(TextFormat("FPS: %d", GetFPS()), screenWidth - 100, 10, 20, RAYWHITE);
             
             if (showDensity) {
-                DrawDensity(cellSize, gridGapWidth, gridGapHeight);
+                DrawDensity(dens);
             }else {
-                DrawGrid(cellSize, gridGapWidth, gridGapHeight);
-                DrawVelocityArrows(cellSize, gridGapWidth, gridGapHeight);
+                DrawGrid();
+                DrawVelocityArrows(u, v);
             }
 
         EndDrawing();

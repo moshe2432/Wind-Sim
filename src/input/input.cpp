@@ -117,8 +117,8 @@ void get_input(Grid& u_prev, Grid& v_prev, Grid& dens_prev, float dt){
                 
                 if (Vector2Distance(mousePos, cellPos) < MOUSE_RADIUS) {// If the mouse is close to the cell center, add density to that cell
                     //dens_prev(i, j) += DENSITY_INJECTION_RATE; // Add density to the cell
-                    u_prev(i, j) += MOUSE_FORCE * mouseDelta.x / (CELL_SIZE * N * dt); // Add horizontal velocity to the cell
-                    v_prev(i, j) += MOUSE_FORCE * mouseDelta.y / (CELL_SIZE * N * dt); // Add vertical velocity to the cell
+                    u_prev(i, j) -= MOUSE_FORCE * mouseDelta.x / (CELL_SIZE * N * dt); // Add horizontal velocity to the cell
+                    v_prev(i, j) -= MOUSE_FORCE * mouseDelta.y / (CELL_SIZE * N * dt); // Add vertical velocity to the cell
                 }
             }
         }
