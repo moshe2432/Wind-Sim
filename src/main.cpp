@@ -3,18 +3,12 @@
 #include <cmath>
 #include "Grid.h"
 #include "input/input.h"
+#include "config.h"
 
-#define N 256
-#define SCREEN_WIDTH 1280
-#define SCREEN_HEIGHT 720
-#define GRID_GAP_WIDTH 320
-#define GRID_GAP_HEIGHT 40
-#define MOUSE_RADIUS 15
-#define MOUSE_FORCE 1.0f
+
 #define VISC 0.0001f
 #define DIFF 0.0001f
-#define DENSITY_SCALE 3.0f
-#define DENSITY_INJECTION_RATE 25.0f
+
 
 static Grid u(N), v(N), u_prev(N), v_prev(N), dens(N),dens_prev(N);
 
@@ -259,7 +253,7 @@ static void UpdatePhysics(float dt){
 }
 
 
-/******************************Input Functions**********************************/
+/******************************Input Functions**********************************
 static void get_input(Grid& u_prev, Grid& v_prev, Grid& dens_prev, float dt){
     // This function should handle user input to modify the velocity and density fields.
     // For example, you can use mouse input to add forces or density to the simulation.
@@ -298,7 +292,8 @@ static void get_input(Grid& u_prev, Grid& v_prev, Grid& dens_prev, float dt){
         }
         
     }
-}
+                
+}*/
 
 
 

@@ -61,80 +61,24 @@ void map_cell_cords_to_grid_pos(float x,float y,Vector2* pos){
 }
 
 
-/*
+
 void get_input(Grid& u_prev, Grid& v_prev, Grid& dens_prev, float dt){
     // This function should handle user input to modify the velocity and density fields.
     // For example, you can use mouse input to add forces or density to the simulation.
-    // Convert mouse position in the window to its position in the grid
-    Vector2 mousePos = GetMousePosition();
-    Vector2 mouseDelta = GetMouseDelta();
-    Vector2 cellPos = {0,0};
-    map_window_pos_to_grid_pos(&mousePos);
+    float x,y;
     
     // Reset the previous velocity and density fields to zero
     u_prev.reset();
     v_prev.reset();
     dens_prev.reset();
     
-    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-        //add density to all the grid cells that are close to the mouse position
-        for (int i = 1; i <= N; i++)
-        {
-            for (int j = 1; j <= N; j++)
-            {   
-                // Calculate the position of the cell center in the grid
-                map_cell_cords_to_grid_pos(i,j,&cellPos);
-                if (Vector2Distance(mousePos, cellPos) < MOUSE_RADIUS) {// If the mouse is close to the cell center, add density to that cell
-                    dens_prev(i+1, j+1) += DENSITY_INJECTION_RATE; // Add density to the cell
-                    
-                }
-            }
-        }
-        
-    }else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)){
-    //add velocity to all the grid cells that are close to the mouse position
-        for (int i = 1; i <= N; i++)
-        {
-            for (int j = 1; j <= N; j++)
-            {   
-                // Calculate the position of the cell center in the grid
-                map_cell_cords_to_grid_pos(i,j,&cellPos);
-                if (Vector2Distance(mousePos, cellPos) < MOUSE_RADIUS) {// If the mouse is close to the cell center, remove density from that cell
-                    u_prev(i+1, j+1) += MOUSE_FORCE * mouseDelta.x / (CELL_SIZE * N * dt); // Add horizontal velocity to the cell
-                    v_prev(i+1, j+1) += MOUSE_FORCE * mouseDelta.y / (CELL_SIZE * N * dt); // Add vertical velocity to the cell}
-                }
-            }
-        }
-    
-    }
-}
-    */
-
-void get_input(Grid& u_prev, Grid& v_prev, Grid& dens_prev, float dt){
-    // This function should handle user input to modify the velocity and density fields.
-    // For example, you can use mouse input to add forces or density to the simulation.
-    float x,y;
-    float cellSize = (SCREEN_HEIGHT - 2 * GRID_GAP_HEIGHT) / (N + 2);
-    
-    // Reset the previous velocity and density fields to zero
-    for (int i = 1; i <= N; i++)
-    {
-        for (int j = 1; j <= N; j++)
-        {
-            u_prev(i, j) = 0.0f;
-            v_prev(i, j) = 0.0f;
-            dens_prev(i, j) = 0.0f;
-        }
-    }
-    
     
     if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
         // Convert mouse position in the window to its position in the grid
         Vector2 mousePos = GetMousePosition();
+        map_window_pos_to_grid_pos(&mousePos);
         Vector2 mouseDelta = GetMouseDelta();
-        x = (mousePos.y - GRID_GAP_HEIGHT);
-        y = (mousePos.x - GRID_GAP_WIDTH);
-        Vector2 mouseGridPos = {x,y};
+        Vector2 cellPos = {0,0};
         
         
         //add density to all the grid cells that are close to the mouse position
@@ -143,15 +87,41 @@ void get_input(Grid& u_prev, Grid& v_prev, Grid& dens_prev, float dt){
             for (int j = 1; j <= N; j++)
             {   
                 // Calculate the position of the cell center in the grid
-                Vector2 cellPos = { i * cellSize + (cellSize/2), j * cellSize + (cellSize/2) };
-                if (Vector2Distance(mouseGridPos, cellPos) < MOUSE_RADIUS) {// If the mouse is close to the cell center, add density to that cell
-                    dens_prev(i+1, j+1) += DENSITY_INJECTION_RATE; // Add density to the cell
-                    u_prev(i+1, j+1) += MOUSE_FORCE * mouseDelta.x / (cellSize * N * dt); // Add horizontal velocity to the cell
-                    v_prev(i+1, j+1) += MOUSE_FORCE * mouseDelta.y / (cellSize * N * dt); // Add vertical velocity to the cell
+                map_cell_cords_to_grid_pos(j, i, &cellPos);
+                
+                
+                if (Vector2Distance(mousePos, cellPos) < MOUSE_RADIUS) {// If the mouse is close to the cell center, add density to that cell
+                    dens_prev(i, j) += DENSITY_INJECTION_RATE; // Add density to the cell
+                    //u_prev(i, j) += MOUSE_FORCE * mouseDelta.x / (CELL_SIZE * N * dt); // Add horizontal velocity to the cell
+                    //v_prev(i, j) += MOUSE_FORCE * mouseDelta.y / (CELL_SIZE * N * dt); // Add vertical velocity to the cell
                 }
             }
         }
         
+    }else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
+        // Convert mouse position in the window to its position in the grid
+        Vector2 mousePos = GetMousePosition();
+        map_window_pos_to_grid_pos(&mousePos);
+        Vector2 mouseDelta = GetMouseDelta();
+        Vector2 cellPos = {0,0};
+        
+        
+        //add density to all the grid cells that are close to the mouse position
+        for (int i = 1; i <= N; i++)
+        {
+            for (int j = 1; j <= N; j++)
+            {   
+                // Calculate the position of the cell center in the grid
+                map_cell_cords_to_grid_pos(j, i, &cellPos);
+                
+                
+                if (Vector2Distance(mousePos, cellPos) < MOUSE_RADIUS) {// If the mouse is close to the cell center, add density to that cell
+                    //dens_prev(i, j) += DENSITY_INJECTION_RATE; // Add density to the cell
+                    u_prev(i, j) += MOUSE_FORCE * mouseDelta.x / (CELL_SIZE * N * dt); // Add horizontal velocity to the cell
+                    v_prev(i, j) += MOUSE_FORCE * mouseDelta.y / (CELL_SIZE * N * dt); // Add vertical velocity to the cell
+                }
+            }
+        }
     }
+                
 }
-
