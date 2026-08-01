@@ -10,5 +10,5 @@ endif()
 
 find_package(raylib REQUIRED)
 
-add_executable(wind-sim src/main.cpp src/input/input.cpp src/rendering/rendering.cpp)
+add_executable(wind-sim src/main.cpp src/input/input.cpp src/rendering/rendering.cpp src/physics/physics.cpp)
 target_link_libraries(wind-sim PRIVATE raylib)
