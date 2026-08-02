@@ -4,7 +4,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include <cmath>
-#include "../Grid.h"
+#include "../SimpleGrid.h"
 
 /*
 * This function maps the window position to the grid position. It takes in the x and y coordinates of the window position and maps them to the corresponding grid position. The implementation of this function is currently empty and needs to be filled in with the appropriate logic to perform the mapping.
@@ -62,7 +62,7 @@ void map_cell_cords_to_grid_pos(float x,float y,Vector2* pos){
 
 
 
-void get_input(Grid& u_prev, Grid& v_prev, Grid& dens_prev, float dt){
+void get_input(SimpleGrid& u_prev, SimpleGrid& v_prev, SimpleGrid& dens_prev, float dt){
     // This function should handle user input to modify the velocity and density fields.
     // For example, you can use mouse input to add forces or density to the simulation.
     float x,y;

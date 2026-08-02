@@ -1,8 +1,8 @@
 #pragma once
 #include "raylib.h"
 #include "raymath.h"
-#include "../Grid.h"
+#include "../SimpleGrid.h"
 
 void DrawGrid();
-void DrawVelocityArrows(Grid& u, Grid& v);
-void DrawDensity(Grid& dens);
+void DrawVelocityArrows(SimpleGrid& u, SimpleGrid& v);
+void DrawDensity(SimpleGrid& dens);

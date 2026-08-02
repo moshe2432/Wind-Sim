@@ -1,14 +1,14 @@
 #include "raylib.h"
 #include "raymath.h"
 #include <cmath>
-#include "Grid.h"
+#include "SimpleGrid.h"
 #include "input/input.h"
 #include "rendering/rendering.h"
 #include "config.h"
 #include "physics/physics.h"
 
 
-static Grid u(N), v(N), u_prev(N), v_prev(N), dens(N),dens_prev(N);
+static SimpleGrid u(N,N), v(N,N), u_prev(N,N), v_prev(N,N), dens(N,N),dens_prev(N,N);
 
 
 int main(){

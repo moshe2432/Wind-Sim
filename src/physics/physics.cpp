@@ -1,6 +1,6 @@
 #include "physics.h"
 #include "../config.h"
-#include "../Grid.h"
+#include "../SimpleGrid.h"
 
 
 /*
@@ -15,17 +15,21 @@
 *   b: field type (0 = scalar field, 1 = horizontal velocity, 2 = vertical velocity).
 *   x: grid whose border cells are updated in place.
 */
-void set_bnd(int b, Grid& x){
-    for (int i = 1; i <= N; i++) {
-        x(0, i) = (b == 1) ? -x(1, i) : x(1, i);
-        x(N + 1, i) = (b == 1) ? -x(N, i) : x(N, i);
+void set_bnd(int b, SimpleGrid& x){
+    int n = x.getN();
+    int m = x.getM();
+    for (int j = 1; j <= m; j++) {
+        x(0, j) = (b == 1) ? -x(1, j) : x(1, j);
+        x(n + 1, j) = (b == 1) ? -x(n, j) : x(n, j);
+    }
+    for (int i = 1; i <= n; i++) {
         x(i, 0) = (b == 2) ? -x(i, 1) : x(i, 1);
-        x(i, N + 1) = (b == 2) ? -x(i, N) : x(i, N);
+        x(i, m + 1) = (b == 2) ? -x(i, m) : x(i, m);
     }
     x(0, 0) = 0.5f * (x(1, 0) + x(0, 1));
-    x(0, N + 1) = 0.5f * (x(1, N + 1) + x(0, N));
-    x(N + 1, 0) = 0.5f * (x(N, 0) + x(N + 1, 1));
-    x(N + 1, N + 1) = 0.5f * (x(N, N + 1) + x(N + 1, N));
+    x(0, m + 1) = 0.5f * (x(1, m + 1) + x(0, m));
+    x(n + 1, 0) = 0.5f * (x(n, 0) + x(n + 1, 1));
+    x(n + 1, m + 1) = 0.5f * (x(n, m + 1) + x(n + 1, m));
 }
 
 /*
@@ -37,9 +41,9 @@ void set_bnd(int b, Grid& x){
 *   s: source values to add.
 *   dt: timestep to scale the source by.
 */
-void add_source(Grid& x, Grid& s, float dt){
-    for (int i = 1; i <= N; i++)
-        for (int j = 1; j <= N; j++)
+void add_source(SimpleGrid& x, SimpleGrid& s, float dt){
+    for (int i = 1; i <= x.getN(); i++)
+        for (int j = 1; j <= x.getM(); j++)
             x(i, j) += dt * s(i, j);
 
 }
@@ -57,12 +61,12 @@ void add_source(Grid& x, Grid& s, float dt){
 *   diff: diffusion rate.
 *   dt: timestep.
 */
-void diffusion(int b, Grid& x, Grid& x0, float diff, float dt){
+void diffusion(int b, SimpleGrid& x, SimpleGrid& x0, float diff, float dt){
     int i,j,k;
-    float a = dt * diff * N * N;
+    float a = dt * diff * x.getN() * x.getM();
     for (k = 0; k < 10; k++) {
-        for (i = 1; i <= N; i++) {
-            for (j = 1; j <= N; j++) {
+        for (i = 1; i <= x.getN(); i++) {
+            for (j = 1; j <= x.getM(); j++) {
                 x(i, j) = (x0(i, j) + a * (x(i-1, j) + x(i+1, j) + x(i, j-1) + x(i, j+1))) / (1 + 4 * a);
             }
         }
@@ -84,28 +88,29 @@ void diffusion(int b, Grid& x, Grid& x0, float diff, float dt){
 *   u, v: velocity field used to trace positions backwards.
 *   dt: timestep.
 */
-void advect(int b, Grid& d, Grid& d0, Grid& u, Grid& v, float dt){
+void advect(int b, SimpleGrid& d, SimpleGrid& d0, SimpleGrid& u, SimpleGrid& v, float dt){
     int i,j;
     int x0, y0, x1, y1;//indexes of the grid cells surrounding the old particle's position
     float x, y, s0, t0, s1, t1;//weights for bilinear interpolation
-    float dt0 = dt * N;
+    float dt0x = dt * d.getN();
+    float dt0y = dt * d.getM();
 
-    for ( i = 1; i <= N; i++)
+    for ( i = 1; i <= d.getN(); i++)
     {
-        for ( j = 1; j <= N; j++)
+        for ( j = 1; j <= d.getM(); j++)
         {
             // Backtrace the particle's position using the velocity field
-            x = i - dt0 * u(i, j);
-            y = j - dt0 * v(i, j);
+            x = i - dt0x * u(i, j);
+            y = j - dt0y * v(i, j);
 
             // Clamp the position to be within the grid boundaries
             if (x < 0.5f) x = 0.5f;
-            if (x > N + 0.5f) x = N + 0.5f;
+            if (x > d.getN() + 0.5f) x = d.getN() + 0.5f;
             x0 = (int)x;
             x1 = x0 + 1;
 
             if (y < 0.5f) y = 0.5f;
-            if (y > N + 0.5f) y = N + 0.5f;
+            if (y > d.getM() + 0.5f) y = d.getM() + 0.5f;
             y0 = (int)y;
             y1 = y0 + 1;
 
@@ -126,7 +131,7 @@ void advect(int b, Grid& d, Grid& d0, Grid& u, Grid& v, float dt){
 
 /*
 * Advances the density field by one timestep: injects sources, diffuses, then advects
-* it through the velocity field. Grids are pointer-swapped between stages rather than
+* it through the velocity field. SimpleGrids are pointer-swapped between stages rather than
 * copied, so x0 alternates between holding the source and holding scratch state.
 *
 * Inputs:
@@ -136,7 +141,7 @@ void advect(int b, Grid& d, Grid& d0, Grid& u, Grid& v, float dt){
 *   diff: diffusion rate.
 *   dt: timestep.
 */
-void dens_step(Grid& x, Grid& x0, Grid& u, Grid& v, float diff, float dt){
+void dens_step(SimpleGrid& x, SimpleGrid& x0, SimpleGrid& u, SimpleGrid& v, float diff, float dt){
     add_source(x, x0, dt);
     x.swap(x0);
     diffusion(0, x, x0, diff, dt);
@@ -157,7 +162,7 @@ void dens_step(Grid& x, Grid& x0, Grid& u, Grid& v, float diff, float dt){
 *   visc: viscosity.
 *   dt: timestep.
 */
-void vel_step(Grid& u, Grid& v, Grid& u0, Grid& v0, float visc, float dt){
+void vel_step(SimpleGrid& u, SimpleGrid& v, SimpleGrid& u0, SimpleGrid& v0, float visc, float dt){
     // Add the source terms to the velocity fields
     add_source(u, u0, dt);
     add_source(v, v0, dt);
@@ -190,13 +195,15 @@ void vel_step(Grid& u, Grid& v, Grid& u0, Grid& v0, float visc, float dt){
 *   p: scratch grid used to hold the solved pressure field.
 *   div: scratch grid used to hold the velocity field's divergence.
 */
-void project(Grid& u, Grid& v, Grid& p, Grid& div){
+void project(SimpleGrid& u, SimpleGrid& v, SimpleGrid& p, SimpleGrid& div){
     int i, j, k;
-    float h = 1.0f / N;
+    int n = u.getN();
+    int m = u.getM();
+    float h = 1.0f / n;
 
     //calculate the divergence of the velocity field
-    for (i = 1; i <= N; i++) {
-        for (j = 1; j <= N; j++) {
+    for (i = 1; i <= n; i++) {
+        for (j = 1; j <= m; j++) {
             div(i, j) = -0.5f * h * (u(i+1, j) - u(i-1, j) + v(i, j+1) - v(i, j-1));
             p(i, j) = 0;
         }
@@ -204,8 +211,8 @@ void project(Grid& u, Grid& v, Grid& p, Grid& div){
     set_bnd(0, div);set_bnd(0, p);
     //solve for the pressure field using the Gauss-Seidel method
     for (k = 0; k < 10; k++) {
-        for (i = 1; i <= N; i++) {
-            for (j = 1; j <= N; j++) {
+        for (i = 1; i <= n; i++) {
+            for (j = 1; j <= m; j++) {
                 p(i, j) = (div(i, j) + p(i-1, j) + p(i+1, j) + p(i, j-1) + p(i, j+1)) / 4;
             }
         }
@@ -213,8 +220,8 @@ void project(Grid& u, Grid& v, Grid& p, Grid& div){
     }
 
     //subtract the pressure gradient from the velocity field to make it divergence-free
-    for (i = 1; i <= N; i++) {
-        for (j = 1; j <= N; j++) {
+    for (i = 1; i <= n; i++) {
+        for (j = 1; j <= m; j++) {
             u(i, j) -= 0.5f * (p(i+1, j) - p(i-1, j)) / h;
             v(i, j) -= 0.5f * (p(i, j+1) - p(i, j-1)) / h;
         }
@@ -235,7 +242,7 @@ void project(Grid& u, Grid& v, Grid& p, Grid& div){
 *   diff: diffusion rate.
 *   dt: timestep.
 */
-void UpdatePhysics(Grid& u, Grid& v, Grid& u_prev, Grid& v_prev, Grid& dens, Grid& dens_prev, float visc, float diff, float dt){
+void UpdatePhysics(SimpleGrid& u, SimpleGrid& v, SimpleGrid& u_prev, SimpleGrid& v_prev, SimpleGrid& dens, SimpleGrid& dens_prev, float visc, float diff, float dt){
     vel_step(u, v, u_prev, v_prev, visc, dt);
     dens_step(dens, dens_prev, u, v, diff, dt);
 }

@@ -1,7 +1,14 @@
 #pragma once
 
-#define N 256                   // Horazantel number of cells
-#define M 256                   // Vertical munber of cells
+/*
+ * Configuration parameters for the simulation
+ * Horizontal: N,n,x,i,u
+ * Vertical: M,m,y,j,v
+ */
+
+
+#define N 256                   // Horizontal number of cells
+#define M 256                   // Vertical number of cells
 #define SCREEN_WIDTH 1280       // Width of the window in pixels
 #define SCREEN_HEIGHT 720       // Height of the window in pixels
 #define GRID_GAP_WIDTH 320      // Width of the gap between the grid and the window edges in pixels

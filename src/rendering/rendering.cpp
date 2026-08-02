@@ -1,10 +1,10 @@
 #include "rendering.h"
 #include "raylib.h"
 #include "raymath.h"
-#include "../Grid.h"
+#include "../SimpleGrid.h"
 #include "../config.h"
 
-static Color DensityToColor(int, int, Grid&);
+static Color DensityToColor(int, int, SimpleGrid&);
 static void DrawArrow(Vector2, Vector2, Color);
 
 /*
@@ -40,10 +40,10 @@ void DrawGrid(){
 }
 
 
-void DrawVelocityArrows(Grid& u, Grid& v){
-    for (int i = 1; i <= N; i++)
+void DrawVelocityArrows(SimpleGrid& u, SimpleGrid& v){
+    for (int i = 1; i <= u.getN(); i++)
     {
-        for (int j = 1; j <= N; j++)
+        for (int j = 1; j <= u.getM(); j++)
         {
             float u_val = u(i, j);
             float v_val = v(i, j);
@@ -54,10 +54,10 @@ void DrawVelocityArrows(Grid& u, Grid& v){
     }
 }
 
-void DrawDensity(Grid& dens){
-    for (int i = 1; i <= N; i++)
+void DrawDensity(SimpleGrid& dens){
+    for (int i = 1; i <= dens.getN(); i++)
     {
-        for (int j = 1; j <= N; j++)
+        for (int j = 1; j <= dens.getM(); j++)
         {
             int x = GRID_GAP_WIDTH + j * CELL_SIZE;
             int y = GRID_GAP_HEIGHT + i * CELL_SIZE;
@@ -66,7 +66,7 @@ void DrawDensity(Grid& dens){
     }
 }
 
-static Color DensityToColor(int i, int j, Grid& dens){
+static Color DensityToColor(int i, int j, SimpleGrid& dens){
     // Map density value to a color (e.g., from blue to red)
     float d = Clamp(dens(i, j) / DENSITY_SCALE, 0.0f, 1.0f);
     Color c = Fade(WHITE, d);   // WHITE with alpha scaled by density
